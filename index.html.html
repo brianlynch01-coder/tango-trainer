@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tango Trainer">
+<meta name="theme-color" content="#08070a">
+<title>Tango Musicality Trainer</title>
+<link id="pwa-manifest" rel="manifest">
+<link id="pwa-icon-apple" rel="apple-touch-icon">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#08070a;--bg2:#0f0d13;--bg3:#161320;--purple:#6c3fa0;--purple-dim:#3d2460;--gold:#d4a843;--gold-dim:#7a5f20;--cream:#e2d8c8;--dim:#5a5268;--red:#c0392b;--green-b:#2ecc71;--amber:#d4870a;--border:#1e1a28;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--cream);font-family:'Playfair Display',serif;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-50%);width:600px;height:300px;pointer-events:none;z-index:0;background:radial-gradient(ellipse,rgba(108,63,160,.10) 0%,transparent 70%);}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.15;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");}
+header{position:relative;z-index:1;text-align:center;padding:2.5rem 1rem 1.5rem;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.35em;text-transform:uppercase;color:var(--purple);margin-bottom:.5rem;}
+header h1{font-size:2.8rem;font-weight:400;color:var(--cream);line-height:1.1;}
+header h1 em{color:var(--gold);font-style:italic;}
+header p{font-style:italic;color:var(--dim);font-size:1rem;margin-top:.4rem;}
+.main{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:2rem 1.4rem 4rem;}
+.mlabel{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:.7rem;display:block;}
+.panel{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);padding:1.4rem 1.6rem;margin-bottom:1.6rem;}
+.panel.gold{border-left-color:var(--gold);}
+.panel h2{font-size:1.2rem;font-weight:400;color:var(--cream);margin-bottom:.4rem;}
+.panel p{font-style:italic;color:var(--dim);font-size:.88rem;line-height:1.7;margin-bottom:.9rem;}
+.panel p:last-child{margin-bottom:0;}
+.panel p strong{color:var(--cream);font-style:normal;}
+.drop-zone{border:2px dashed var(--border);background:var(--bg);padding:2.2rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:1rem;position:relative;}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--gold-dim);background:var(--bg3);}
+.drop-zone.loaded{border-color:var(--gold);border-style:solid;}
+.dz-icon{font-size:2rem;color:var(--gold-dim);margin-bottom:.5rem;}
+.dz-text{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.12em;color:var(--dim);}
+.dz-text strong{color:var(--cream);}
+.dz-filename{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--gold);margin-top:.4rem;display:none;}
+#file-input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.analysis-wrap{display:none;margin-bottom:1rem;}
+.analysis-top{display:flex;justify-content:space-between;margin-bottom:.3rem;}
+.analysis-top span{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:var(--gold-dim);}
+.abar-bg{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.abar{height:100%;width:0%;background:linear-gradient(90deg,var(--purple),var(--gold));border-radius:3px;transition:width .2s;}
+.bm-status{font-family:'Share Tech Mono',monospace;font-size:.68rem;padding:.5rem .8rem;border-left:3px solid var(--gold-dim);background:var(--bg3);color:var(--dim);margin-bottom:1rem;display:none;}
+.bm-status.ok{border-left-color:var(--green-b);color:var(--green-b);}
+.bm-status.cached{border-left-color:var(--purple);color:var(--purple);}
+.bm-status.err{border-left-color:var(--red);color:var(--red);}
+.audio-player{display:none;align-items:center;gap:1rem;padding:.8rem 1rem;background:var(--bg3);border:1px solid var(--border);margin-bottom:1rem;}
+.audio-player.visible{display:flex;}
+audio{flex:1;height:32px;}
+.track-label{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--gold);white-space:nowrap;}
+.wave-wrap{background:var(--bg);border:1px solid var(--border);height:56px;position:relative;overflow:hidden;margin-bottom:1rem;}
+canvas#waveform{position:absolute;inset:0;width:100%;height:100%;}
+.beat-flash{position:absolute;inset:0;background:rgba(212,168,67,.18);opacity:0;pointer-events:none;transition:opacity .05s;}
+.beat-flash.lit{opacity:1;}
+.test-row{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem;}
+.fg{display:flex;flex-direction:column;gap:.3rem;}
+.fg label{font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-dim);}
+input[type=number],select{background:var(--bg);border:1px solid var(--border);color:var(--cream);padding:.42rem .6rem;font-family:'Share Tech Mono',monospace;font-size:.8rem;outline:none;}
+input[type=number]{width:72px;text-align:center;}
+.trg{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:.8rem;}
+.trc{background:var(--bg3);padding:.7rem;text-align:center;}
+.trc .trl{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.2rem;}
+.trc .trv{font-size:1.6rem;font-style:italic;display:block;line-height:1;}
+.verdict{font-family:'Share Tech Mono',monospace;font-size:.68rem;line-height:1.8;padding:.7rem .9rem;border-left:3px solid var(--gold-dim);background:var(--bg3);color:var(--cream);}
+.prog-wrap{display:none;margin-bottom:.8rem;}
+.prog-hdr{display:flex;justify-content:space-between;margin-bottom:.3rem;}
+.prog-hdr span{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);}
+.pbar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.pbar{height:100%;width:0%;background:var(--gold);border-radius:2px;transition:width .15s;}
+.top-bar{display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem;flex-wrap:wrap;}
+.bpm-badge{display:inline-flex;align-items:baseline;gap:.3rem;background:var(--bg3);border:1px solid var(--purple-dim);padding:.2rem .7rem;margin-left:auto;}
+.bpm-badge .bval{font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:var(--purple);}
+.bpm-badge .blabel{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);}
+.controls-row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1.4rem;}
+.btn{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;padding:.6rem 1.3rem;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);cursor:pointer;transition:all .12s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .15s;z-index:-1;}
+.btn:hover:not(:disabled)::before{transform:scaleX(1);}
+.btn:hover:not(:disabled){color:var(--bg);border-color:var(--gold);}
+.btn.primary{background:var(--gold);color:var(--bg);border-color:var(--gold);}
+.btn.primary::before{display:none;}
+.btn.primary:hover:not(:disabled){background:transparent;color:var(--gold);}
+.btn:disabled{opacity:.25;cursor:not-allowed;}
+.status-txt{font-family:'Share Tech Mono',monospace;font-size:.67rem;color:var(--dim);margin-left:auto;text-align:right;}
+.score-panel{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:1.4rem;}
+.sc{background:var(--bg2);padding:1rem;text-align:center;}
+.sl{font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:.3rem;}
+.sv{font-size:2rem;font-weight:400;color:var(--gold);display:block;line-height:1;font-style:italic;transition:all .15s;}
+.sv.flash{color:var(--green-b);transform:scale(1.1);}
+.sv.bad{color:var(--red);}
+.tap-area{text-align:center;margin:.5rem 0 1.4rem;}
+.tap-key{display:inline-block;padding:1.5rem 5rem;border:1px solid var(--gold-dim);background:var(--bg2);color:var(--gold);font-family:'Playfair Display',serif;font-size:1.35rem;font-style:italic;cursor:pointer;user-select:none;position:relative;overflow:hidden;transition:border-color .08s,transform .06s;}
+.tap-key::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(212,168,67,.2) 0%,transparent 70%);opacity:0;transition:opacity .05s;}
+.tap-key.pressed{transform:scale(.972);border-color:var(--gold);}
+.tap-key.pressed::before{opacity:1;}
+.tap-key:not(.active){opacity:.35;cursor:not-allowed;}
+.tap-sub{display:block;font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:.2em;color:var(--dim);margin-top:.4rem;text-transform:uppercase;font-style:normal;}
+.beat-grid{background:var(--bg2);border:1px solid var(--border);padding:1.2rem 1.2rem .8rem;}
+.timeline{position:relative;height:80px;overflow:hidden;}
+.dbm{position:absolute;bottom:0;width:2px;transform:translateX(-50%);}
+.dbm.future{background:var(--gold-dim);height:40px;opacity:.5;}
+.dbm.now{background:var(--gold);height:64px;opacity:1;}
+.dbm.past{background:var(--gold-dim);height:40px;opacity:.3;}
+.tap-dot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translateX(-50%);top:6px;animation:dotpop .25s ease-out forwards;}
+@keyframes dotpop{0%{transform:translateX(-50%) scale(0);opacity:1}60%{transform:translateX(-50%) scale(1.5)}100%{transform:translateX(-50%) scale(1);opacity:.9}}
+.tap-dot.on{background:var(--green-b);box-shadow:0 0 8px var(--green-b);}
+.tap-dot.cl{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+.tap-dot.off{background:var(--red);box-shadow:0 0 5px var(--red);}
+.ph{position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(226,216,200,.3);transform:translateX(-50%);pointer-events:none;}
+.ph::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:rgba(226,216,200,.45);}
+.ph::after{content:'NOW';position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-family:'Share Tech Mono',monospace;font-size:.44rem;letter-spacing:.15em;color:var(--dim);}
+#grid-empty{text-align:center;font-style:italic;color:var(--dim);padding:1.8rem;font-size:.9rem;}
+.legend{display:flex;gap:1.3rem;flex-wrap:wrap;padding-top:.6rem;}
+.li{display:flex;align-items:center;gap:.35rem;font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.lb{width:2px;height:13px;flex-shrink:0;}
+.instr{background:var(--bg2);border-left:3px solid var(--purple-dim);padding:1rem 1.2rem;margin-top:1.4rem;font-style:italic;color:var(--dim);font-size:.88rem;line-height:1.8;}
+.instr strong{color:var(--cream);font-style:normal;}
+.fb{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);font-family:'Share Tech Mono',monospace;font-size:1.1rem;letter-spacing:.2em;text-transform:uppercase;pointer-events:none;opacity:0;z-index:600;text-shadow:0 0 20px currentColor;}
+.fb.show{animation:fbf .6s ease-out forwards;}
+@keyframes fbf{0%{opacity:1;transform:translate(-50%,-50%) scale(.85)}25%{opacity:1;transform:translate(-50%,-60%) scale(1.05)}100%{opacity:0;transform:translate(-50%,-85%) scale(1)}}
+@media(max-width:600px){
+  header h1{font-size:2rem;}
+  .main{padding:1.2rem .9rem 3rem;}
+  .score-panel{grid-template-columns:repeat(2,1fr);}
+  .tap-key{padding:1.8rem 3rem;font-size:1.2rem;width:100%;}
+  .trg{grid-template-columns:repeat(2,1fr);}
+  .controls-row{flex-direction:column;align-items:stretch;}
+  .controls-row .btn{text-align:center;}
+  .status-txt{margin-left:0;text-align:left;}
+  audio{min-width:0;}
+}
+.tap-key{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.btn{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Argentine Tango · Musicality Training</div>
+  <h1>Hear the <em>Beat</em></h1>
+  <p>Load a tango MP3. The app maps every beat. You tap. It judges.</p>
+</header>
+<div class="main">
+  <div class="top-bar">
+    <span class="mlabel" style="margin-bottom:0">Beat Tracker</span>
+    <div class="bpm-badge"><span class="bval" id="bpm-val">—</span><span class="blabel">BPM</span></div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="panel gold">
+    <h2>Step 1 — Load a tango MP3</h2>
+    <p>Download a track from YouTube using a converter (e.g. <strong>ytmp3.cc</strong>), then open this file in your browser and drag the MP3 here. The app analyses the full track in the background — the page stays responsive. Beat maps are <strong>saved in your browser</strong> so subsequent loads are instant.</p>
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="audio/*" />
+      <div class="dz-icon">♩</div>
+      <div class="dz-text"><strong>Drag MP3 here</strong> or click to browse</div>
+      <div class="dz-filename" id="dz-filename"></div>
+    </div>
+    <div class="analysis-wrap" id="analysis-wrap">
+      <div class="analysis-top"><span id="analysis-label">Analysing beat structure…</span><span id="analysis-pct">0%</span></div>
+      <div class="abar-bg"><div class="abar" id="abar"></div></div>
+    </div>
+    <div class="bm-status" id="bm-status"></div>
+    <div class="audio-player" id="audio-player">
+      <audio id="audio-el" controls></audio>
+      <span class="track-label" id="track-label">—</span>
+    </div>
+    <div class="wave-wrap"><canvas id="waveform"></canvas><div class="beat-flash" id="beat-flash"></div></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="panel">
+    <h2>Step 2 — Verify the detector (optional)</h2>
+    <p>Plays a synthetic click track at a known BPM and checks how many beats the onset engine catches. Useful to confirm the app is working correctly. Aim for <strong>≥ 90%</strong>.</p>
+    <div class="test-row">
+      <div class="fg"><label>BPM</label><input type="number" id="test-bpm" value="69" min="40" max="140"/></div>
+      <div class="fg"><label>Duration</label><select id="test-dur"><option value="10">10 s</option><option value="20" selected>20 s</option></select></div>
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+      <button class="btn" id="btn-run-test" disabled>Run Test</button>
+      <span class="status-txt" style="margin-left:0;" id="test-status">Load an MP3 first</span>
+    </div>
+    <div class="prog-wrap" id="prog-wrap">
+      <div class="prog-hdr"><span id="test-countdown">Running…</span><span id="test-beat-counter">0 beats detected</span></div>
+      <div class="pbar-bg"><div class="pbar" id="pbar"></div></div>
+    </div>
+    <div id="test-results" style="display:none;">
+      <div class="trg">
+        <div class="trc"><span class="trl">Expected</span><span class="trv" id="tr-exp" style="color:var(--cream)">—</span></div>
+        <div class="trc"><span class="trl">Detected</span><span class="trv" id="tr-det" style="color:var(--gold)">—</span></div>
+        <div class="trc"><span class="trl">Detection %</span><span class="trv" id="tr-pct">—</span></div>
+        <div class="trc"><span class="trl">False triggers</span><span class="trv" id="tr-false" style="color:var(--amber)">—</span></div>
+      </div>
+      <div class="verdict" id="test-verdict"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-row">
+    <button class="btn primary" id="btn-session" disabled>Start Session</button>
+    <button class="btn" id="btn-reset" disabled>Reset</button>
+    <span class="status-txt" id="status-txt">Load an MP3 to begin</span>
+  </div>
+
+  <!-- Score -->
+  <div class="score-panel">
+    <div class="sc"><span class="sl">Accuracy</span><span class="sv" id="sc-acc">—</span></div>
+    <div class="sc"><span class="sl">Taps</span><span class="sv" id="sc-taps">0</span></div>
+    <div class="sc"><span class="sl">On Beat</span><span class="sv" id="sc-on">0</span></div>
+    <div class="sc"><span class="sl">Avg Offset</span><span class="sv" id="sc-off">—</span></div>
+  </div>
+
+  <!-- Tap -->
+  <div class="tap-area">
+    <div class="tap-key" id="tap-key">Tap the Beat<span class="tap-sub">Spacebar or click · every strong beat</span></div>
+  </div>
+
+  <!-- Grid -->
+  <div style="margin-bottom:1rem;">
+    <span class="mlabel">Beat Grid — pre-mapped beats vs. your taps</span>
+    <div class="beat-grid">
+      <div id="grid-empty">Load an MP3 — pre-mapped beats appear here during a session</div>
+      <div class="timeline" id="timeline" style="display:none"><div class="ph"></div></div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="lb" style="background:var(--gold)"></div>Beat at playhead</div>
+      <div class="li"><div class="lb" style="background:var(--gold-dim);opacity:.5"></div>Upcoming/past</div>
+      <div class="li"><div class="ld" style="background:var(--green-b)"></div>On beat (&lt;100ms)</div>
+      <div class="li"><div class="ld" style="background:var(--amber)"></div>Close (100–250ms)</div>
+      <div class="li"><div class="ld" style="background:var(--red)"></div>Off beat (&gt;250ms)</div>
+    </div>
+  </div>
+
+  <div class="instr">
+    <strong>Getting started:</strong> Open this file in Edge or Chrome, download a D'Arienzo track (La Cumparsita or Dime Mi Amor) from YouTube as an MP3, and drag it onto the drop zone. The beat analysis runs in the background in a few seconds. Beat maps are cached so you only analyse once per track.
+    <br><br>
+    <strong>What to tap:</strong> The strong beat — roughly every two steps a dancer takes. In D'Arienzo this is the sharp downward punch of the bandoneon. Aim to land your tap <em>on</em> the sound, not after it.
+    <br><br>
+    <strong>Progression:</strong> D'Arienzo (~69 BPM) → Di Sarli (softer, cushioned in strings) → Pugliese (the beat breathes deliberately).
+  </div>
+</div>
+<div class="fb" id="fb"></div>
+
+<script id="worker-src" type="text/plain">
+// ── BEAT TRACKER WEB WORKER ──
+// Fast RMS-based energy onset + autocorrelation tempo + DP beat placement
+// Runs in background thread — posts { type:'progress', pct } and { type:'done', beats, bpm }
+
+self.onmessage = function(e) {
+  const { samples, sampleRate } = e.data;
+  const SR  = sampleRate;
+  const HOP = 256;   // hop size in samples (~5.8ms @ 44100)
+  const WIN = 1024;  // RMS window
+  const MIN_BPM = 50, MAX_BPM = 180;
+
+  self.postMessage({ type:'progress', pct:5 });
+
+  // 1. RMS onset envelope (fast — no DFT)
+  const nFrames = Math.floor((samples.length - WIN) / HOP) + 1;
+  const onset   = new Float32Array(nFrames);
+  let prevRms   = 0;
+
+  for (let f = 0; f < nFrames; f++) {
+    let sum = 0;
+    const off = f * HOP;
+    for (let i = 0; i < WIN; i++) { const v = samples[off + i]; sum += v * v; }
+    const rms  = Math.sqrt(sum / WIN);
+    const flux = Math.max(0, rms - prevRms); // half-wave rectified flux
+    onset[f]   = flux;
+    prevRms    = rms;
+    if (f % 1000 === 0) self.postMessage({ type:'progress', pct: 5 + Math.round((f/nFrames)*55) });
+  }
+
+  self.postMessage({ type:'progress', pct:60 });
+
+  // 2. Smooth onset envelope
+  const smoothed = new Float32Array(nFrames);
+  const R = 5;
+  for (let i = 0; i < nFrames; i++) {
+    let s = 0, c = 0;
+    for (let j = Math.max(0,i-R); j <= Math.min(nFrames-1,i+R); j++) { s += onset[j]; c++; }
+    smoothed[i] = s / c;
+  }
+
+  // 3. Autocorrelation for tempo
+  const fps    = SR / HOP;
+  const lagMin = Math.max(1, Math.floor(fps * 60 / MAX_BPM));
+  const lagMax = Math.ceil(fps * 60 / MIN_BPM);
+  const acorr  = new Float32Array(lagMax + 1);
+
+  for (let lag = lagMin; lag <= lagMax; lag++) {
+    let s = 0;
+    for (let i = 0; i + lag < nFrames; i++) s += smoothed[i] * smoothed[i + lag];
+    acorr[lag] = s;
+  }
+
+  self.postMessage({ type:'progress', pct:78 });
+
+  // Peak of autocorrelation
+  let bestLag = lagMin, bestVal = 0;
+  for (let lag = lagMin; lag <= lagMax; lag++) {
+    if (acorr[lag] > bestVal) { bestVal = acorr[lag]; bestLag = lag; }
+  }
+
+  // Prefer half-time if it's nearly as strong (tango is often counted in half-time)
+  const halfLag = Math.round(bestLag / 2);
+  if (halfLag >= lagMin && halfLag <= lagMax && acorr[halfLag] > bestVal * 0.80) {
+    bestLag = halfLag;
+  }
+
+  const bpm      = (fps * 60) / bestLag;
+  const beatSecs = bestLag / fps;
+
+  self.postMessage({ type:'progress', pct:82 });
+
+  // 4. Dynamic programming beat placement (Ellis 2007, simplified)
+  const ALPHA = 0.8;
+  const score = new Float32Array(nFrames);
+  const prev  = new Int32Array(nFrames);
+  for (let i = 0; i < nFrames; i++) score[i] = smoothed[i];
+
+  for (let i = 1; i < nFrames; i++) {
+    let best = -Infinity, bestJ = -1;
+    const jMin = Math.max(0, i - Math.round(bestLag * 2));
+    const jMax = Math.max(0, i - Math.round(bestLag * 0.5));
+    for (let j = jMax; j >= jMin; j--) {
+      const lr = Math.log((i - j) / bestLag);
+      const c  = score[j] - ALPHA * lr * lr;
+      if (c > best) { best = c; bestJ = j; }
+    }
+    if (bestJ >= 0) { score[i] = smoothed[i] + best; prev[i] = bestJ; }
+  }
+
+  self.postMessage({ type:'progress', pct:94 });
+
+  // Backtrack
+  let cur = 0;
+  for (let i = 1; i < nFrames; i++) if (score[i] > score[cur]) cur = i;
+  const frames = [];
+  let guard = 0;
+  while (cur > 0 && guard++ < 10000) {
+    frames.push(cur);
+    const p = prev[cur];
+    if (p === cur) break;
+    cur = p;
+  }
+  frames.reverse();
+
+  // Convert to seconds & deduplicate
+  const minGap = beatSecs * 0.6;
+  const times  = [];
+  let lastT    = -999;
+  for (const fr of frames) {
+    const t = (fr * HOP) / SR;
+    if (t - lastT >= minGap) { times.push(t); lastT = t; }
+  }
+
+  self.postMessage({ type:'progress', pct:100 });
+  self.postMessage({ type:'done', beats: times, bpm: Math.round(bpm * 10) / 10 });
+};
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  APP
+// ════════════════════════════════════════════════════════
+const audioEl = document.getElementById('audio-el');
+let actx = null, analyser = null, sourceNode = null;
+let audioReady = false;
+let beatMapSecs = [], trackBpm = 0;
+
+// Session
+let sessionActive = false;
+let taps = [], tapCount = 0, onBeatCount = 0, offsets = [];
+
+// Waveform / test
+let waveformData = null;
+let prevEnergy = 0, energyHistory = [], lastBeatTime = 0;
+const E_LEN = 43;
+let testRunning = false, testExpected = [], testDetected = [], testCapturing = false;
+
+// ── Storage ──
+function storeKey(file) { return 'tango_bm_' + file.name + '_' + file.size; }
+function loadCache(file) { try { const r = localStorage.getItem(storeKey(file)); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+function saveCache(file, data) { try { localStorage.setItem(storeKey(file), JSON.stringify(data)); } catch(e) {} }
+
+// ── File load ──
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('file-input').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+async function handleFile(file) {
+  if (!file || !file.type.startsWith('audio/')) { alert('Please load an audio file (MP3 etc.)'); return; }
+
+  beatMapSecs = []; trackBpm = 0; audioReady = false;
+  document.getElementById('btn-session').disabled = true;
+  document.getElementById('btn-run-test').disabled = true;
+  document.getElementById('bm-status').style.display = 'none';
+  document.getElementById('test-status').textContent = 'Waiting for beat analysis…';
+
+  const url = URL.createObjectURL(file);
+  audioEl.src = url;
+  dz.classList.add('loaded');
+  document.getElementById('dz-filename').style.display = 'block';
+  document.getElementById('dz-filename').textContent = '✓ ' + file.name;
+  document.getElementById('audio-player').classList.add('visible');
+  document.getElementById('track-label').textContent = file.name.replace(/\.[^.]+$/, '');
+
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  if (sourceNode) { try { sourceNode.disconnect(); } catch(e) {} }
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 1024;
+  analyser.smoothingTimeConstant = 0.25;
+  waveformData = new Float32Array(analyser.fftSize);
+  sourceNode = actx.createMediaElementSource(audioEl);
+  sourceNode.connect(analyser);
+  analyser.connect(actx.destination);
+  startWaveformLoop();
+
+  // Check cache
+  const cached = loadCache(file);
+  if (cached && cached.beats && cached.beats.length > 0) {
+    beatMapSecs = cached.beats; trackBpm = cached.bpm;
+    setBmStatus('cached', `✓ Cached beat map loaded — ${beatMapSecs.length} beats · ${trackBpm} BPM`);
+    finishLoad();
+    return;
+  }
+
+  // Run worker
+  document.getElementById('analysis-wrap').style.display = 'block';
+  document.getElementById('abar').style.width = '0%';
+  document.getElementById('analysis-pct').textContent = '0%';
+  setStatus('Analysing beat structure — please wait…');
+
+  try {
+    const arrayBuf = await file.arrayBuffer();
+    const decoded  = await actx.decodeAudioData(arrayBuf);
+
+    // Mix to mono
+    const nCh = decoded.numberOfChannels;
+    const len  = decoded.length;
+    const mono = new Float32Array(len);
+    for (let i = 0; i < len; i++) {
+      let s = 0;
+      for (let c = 0; c < nCh; c++) s += decoded.getChannelData(c)[i];
+      mono[i] = s / nCh;
+    }
+
+    // Spawn worker from inline script tag
+    const workerSrc = document.getElementById('worker-src').textContent;
+    const blob   = new Blob([workerSrc], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+
+    worker.onmessage = e => {
+      const msg = e.data;
+      if (msg.type === 'progress') {
+        document.getElementById('abar').style.width = msg.pct + '%';
+        document.getElementById('analysis-pct').textContent = msg.pct + '%';
+        document.getElementById('analysis-label').textContent = msg.pct < 60 ? 'Computing onset envelope…' : msg.pct < 82 ? 'Estimating tempo…' : 'Placing beats…';
+      } else if (msg.type === 'done') {
+        worker.terminate();
+        document.getElementById('analysis-wrap').style.display = 'none';
+        beatMapSecs = msg.beats; trackBpm = msg.bpm;
+        saveCache(file, { beats: msg.beats, bpm: msg.bpm });
+        setBmStatus('ok', `✓ Beat map complete — ${beatMapSecs.length} beats · ${trackBpm} BPM · saved to cache`);
+        finishLoad();
+      }
+    };
+
+    worker.onerror = err => {
+      worker.terminate();
+      document.getElementById('analysis-wrap').style.display = 'none';
+      setBmStatus('err', '✗ Beat analysis failed — ' + err.message);
+      setStatus('Analysis failed — try a different file');
+    };
+
+    worker.postMessage({ samples: mono, sampleRate: decoded.sampleRate }, [mono.buffer]);
+
+  } catch(err) {
+    document.getElementById('analysis-wrap').style.display = 'none';
+    setBmStatus('err', '✗ Could not decode audio — ' + err.message);
+    setStatus('File load failed');
+    console.error(err);
+  }
+}
+
+function finishLoad() {
+  document.getElementById('track-label').textContent = trackBpm + ' BPM · ' + beatMapSecs.length + ' beats';
+  document.getElementById('bpm-val').textContent = Math.round(trackBpm);
+  audioReady = true;
+  document.getElementById('btn-session').disabled = false;
+  document.getElementById('btn-run-test').disabled = false;
+  document.getElementById('test-status').textContent = 'Ready — click Run Test';
+  setStatus('Beat map ready — start a session and tap along');
+}
+
+function setBmStatus(type, msg) {
+  const el = document.getElementById('bm-status');
+  el.style.display = 'block'; el.className = 'bm-status ' + type; el.textContent = msg;
+}
+
+// ── Waveform / onset loop (waveform + test detection only) ──
+function startWaveformLoop() {
+  const canvas = document.getElementById('waveform');
+  const ctx2d  = canvas.getContext('2d');
+  (function loop() {
+    requestAnimationFrame(loop);
+    if (!analyser) return;
+    analyser.getFloatTimeDomainData(waveformData);
+
+    // Onset for test harness only
+    if (testCapturing) {
+      let sum = 0;
+      for (let i = 0; i < waveformData.length; i++) sum += waveformData[i] * waveformData[i];
+      const rms = Math.sqrt(sum / waveformData.length);
+      energyHistory.push(rms); if (energyHistory.length > E_LEN) energyHistory.shift();
+      const avg = energyHistory.reduce((a,b)=>a+b,0)/energyHistory.length;
+      const flux = rms - prevEnergy; prevEnergy = rms;
+      const thr  = avg * 1.8; // fixed moderate threshold for test
+      const now  = performance.now();
+      if (flux > thr && flux > 0.003 && now - lastBeatTime > 300) {
+        lastBeatTime = now;
+        testDetected.push(now);
+        document.getElementById('test-beat-counter').textContent = testDetected.length + ' beats detected';
+        const fl = document.getElementById('beat-flash'); fl.classList.add('lit'); setTimeout(()=>fl.classList.remove('lit'),80);
+      }
+    }
+
+    // Draw waveform
+    const W = canvas.width = canvas.offsetWidth, H = canvas.height = canvas.offsetHeight;
+    ctx2d.clearRect(0,0,W,H);
+    ctx2d.strokeStyle='rgba(108,63,160,.55)'; ctx2d.lineWidth=1; ctx2d.beginPath();
+    const step = Math.ceil(waveformData.length/W);
+    for (let i=0;i<W;i++){const v=waveformData[i*step]||0;const y=H/2+v*H*1.8;i===0?ctx2d.moveTo(i,y):ctx2d.lineTo(i,y);}
+    ctx2d.stroke();
+    ctx2d.strokeStyle='rgba(108,63,160,.1)'; ctx2d.beginPath(); ctx2d.moveTo(0,H/2); ctx2d.lineTo(W,H/2); ctx2d.stroke();
+  })();
+}
+
+// ── Detector test ──
+document.getElementById('btn-run-test').addEventListener('click', runTest);
+
+function runTest() {
+  if (testRunning || !actx) return;
+  const bpm = parseFloat(document.getElementById('test-bpm').value)||69;
+  const dur = parseInt(document.getElementById('test-dur').value)||20;
+  const iv  = (60/bpm)*1000;
+  const tot = Math.floor((dur*1000)/iv);
+  testRunning=true; testExpected=[]; testDetected=[]; testCapturing=true;
+  prevEnergy=0; energyHistory=[]; lastBeatTime=0;
+  document.getElementById('test-results').style.display='none';
+  document.getElementById('prog-wrap').style.display='block';
+  document.getElementById('btn-run-test').disabled=true;
+  document.getElementById('btn-run-test').textContent='Running…';
+  document.getElementById('test-status').textContent=`Testing at ${bpm} BPM for ${dur}s…`;
+  if (actx.state==='suspended') actx.resume();
+  const sa=actx.currentTime+0.25, sp=performance.now()+250;
+  for (let i=0;i<tot;i++){
+    const ba=sa+(i*iv/1000), bp=sp+(i*iv);
+    testExpected.push(bp);
+    const osc=actx.createOscillator(),g=actx.createGain();
+    osc.frequency.value=1000; osc.type='sine';
+    g.gain.setValueAtTime(0.85,ba); g.gain.exponentialRampToValueAtTime(0.001,ba+0.04);
+    osc.connect(g); g.connect(analyser);
+    osc.start(ba); osc.stop(ba+0.05);
+  }
+  const totalMs=dur*1000;
+  const poll=setInterval(()=>{
+    const el=performance.now()-sp, p=Math.min(100,(el/totalMs)*100);
+    document.getElementById('pbar').style.width=p+'%';
+    const r=Math.max(0,Math.round(dur-el/1000));
+    document.getElementById('test-countdown').textContent=r>0?`${r}s remaining…`:'Analysing…';
+    if (el>=totalMs){clearInterval(poll);setTimeout(()=>finishTest(bpm),350);}
+  },100);
+}
+
+function finishTest(bpm){
+  testRunning=false; testCapturing=false;
+  document.getElementById('prog-wrap').style.display='none';
+  document.getElementById('btn-run-test').disabled=false;
+  document.getElementById('btn-run-test').textContent='Run Test';
+  const exp=testExpected.length, WIN=150;
+  let tp=0; const used=new Set();
+  testDetected.forEach(dt=>{
+    let bi=-1,bd=Infinity;
+    testExpected.forEach((et,i)=>{if(used.has(i))return;const d=Math.abs(dt-et);if(d<WIN&&d<bd){bd=d;bi=i;}});
+    if(bi>=0){tp++;used.add(bi);}
+  });
+  const ft=testDetected.length-tp, pct=exp>0?Math.round((tp/exp)*100):0;
+  document.getElementById('tr-exp').textContent=exp;
+  document.getElementById('tr-det').textContent=tp;
+  const pe=document.getElementById('tr-pct'); pe.textContent=pct+'%';
+  pe.style.color=pct>=90?'var(--green-b)':pct>=70?'var(--amber)':'var(--red)';
+  document.getElementById('tr-false').textContent=ft;
+  document.getElementById('test-results').style.display='block';
+  let v;
+  if(pct>=90&&ft<=2) v=`✓ GOOD — ${tp}/${exp} detected, ${ft} false trigger${ft!==1?'s':''}. Beat engine is reliable at ${bpm} BPM.`;
+  else if(pct>=70) v=`⚠ MARGINAL — ${tp}/${exp} (${pct}%). ${tp<exp-ft?'Try reloading.':'Too many false triggers.'}`;
+  else v=`✗ POOR — ${tp}/${exp} (${pct}%). Try reloading the MP3.`;
+  document.getElementById('test-verdict').textContent=v;
+  document.getElementById('test-status').textContent=`Test complete — ${pct}% at ${bpm} BPM`;
+}
+
+// ── Session ──
+document.getElementById('btn-session').addEventListener('click',()=>{if(sessionActive)endSession();else startSession();});
+document.getElementById('btn-reset').addEventListener('click',()=>{endSession();resetDisplay();audioEl.currentTime=0;});
+
+function startSession(){
+  if(!audioReady||beatMapSecs.length===0) return;
+  if(actx.state==='suspended') actx.resume();
+  taps=[]; tapCount=0; onBeatCount=0; offsets=[];
+  document.getElementById('grid-empty').style.display='none';
+  document.getElementById('timeline').style.display='block';
+  document.getElementById('btn-session').textContent='End Session';
+  document.getElementById('btn-reset').disabled=false;
+  document.getElementById('tap-key').classList.add('active');
+  sessionActive=true;
+  audioEl.currentTime=0; audioEl.play();
+  setStatus('Session active — tap the strong beat!');
+  updateScore();
+  requestAnimationFrame(renderGrid);
+}
+
+function endSession(){
+  sessionActive=false; audioEl.pause();
+  document.getElementById('btn-session').textContent='Start Session';
+  document.getElementById('tap-key').classList.remove('active');
+  const pct=tapCount>0?Math.round((onBeatCount/tapCount)*100):0;
+  setStatus('Session ended'+(tapCount>0?` — ${pct}% accuracy · ${Math.round(trackBpm)} BPM`:''));
+}
+
+function resetDisplay(){
+  taps=[]; tapCount=0; onBeatCount=0; offsets=[];
+  ['sc-acc','sc-taps','sc-on','sc-off'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.textContent=id==='sc-taps'||id==='sc-on'?'0':'—';
+    el.classList.remove('flash','bad');
+  });
+  const tl=document.getElementById('timeline');
+  tl.innerHTML='<div class="ph"></div>'; tl.style.display='none';
+  document.getElementById('grid-empty').style.display='block';
+  setStatus(audioReady?'Press Start Session to begin':'Load an MP3 to begin');
+}
+
+function setStatus(t){document.getElementById('status-txt').textContent=t;}
+
+// ── Tapping ──
+function handleTap(){
+  if(!sessionActive||beatMapSecs.length===0) return;
+  const pos=audioEl.currentTime; // seconds
+  let closest=null, minDist=Infinity;
+  for(const b of beatMapSecs){const d=Math.abs(b-pos);if(d<minDist&&d<0.6){minDist=d;closest=b;}}
+  if(closest===null){showFb('none',0);return;}
+  const off=(pos-closest)*1000;
+  const abs=Math.abs(off);
+  const rating=abs<100?'on':abs<250?'cl':'off';
+  taps.push({perfTime:performance.now(),trackPos:pos,offsetMs:off,rating});
+  tapCount++; if(rating==='on') onBeatCount++; offsets.push(abs);
+  showFb(rating,off); updateScore(); flashKey();
+}
+
+function showFb(r,off){
+  const map={on:{t:'✓  On Beat',c:'var(--green-b)'},cl:{t:off<0?'Early':'Late',c:'var(--amber)'},off:{t:off<0?'Too Early':'Too Late',c:'var(--red)'},none:{t:'No beat nearby',c:'var(--dim)'}};
+  const m=map[r]||map.none;
+  const el=document.getElementById('fb'); el.textContent=m.t; el.style.color=m.c;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+
+function flashKey(){const k=document.getElementById('tap-key');k.classList.add('pressed');setTimeout(()=>k.classList.remove('pressed'),90);}
+
+function updateScore(){
+  document.getElementById('sc-taps').textContent=tapCount;
+  document.getElementById('sc-on').textContent=onBeatCount;
+  if(tapCount>0){
+    const pct=Math.round((onBeatCount/tapCount)*100);
+    const acc=document.getElementById('sc-acc'); acc.textContent=pct+'%';
+    acc.classList.toggle('bad',pct<40); acc.classList.add('flash'); setTimeout(()=>acc.classList.remove('flash'),200);
+    const avg=offsets.reduce((a,b)=>a+b,0)/offsets.length;
+    const off=document.getElementById('sc-off'); off.textContent=Math.round(avg)+'ms';
+    off.classList.toggle('bad',avg>250);
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();if(sessionActive)handleTap();}});
+document.getElementById('tap-key').addEventListener('click',()=>{if(sessionActive)handleTap();});
+
+// ════════════════════════════════════════════════════════
+//  PWA — manifest + icon + service worker (all inline)
+// ════════════════════════════════════════════════════════
+(function initPWA() {
+
+  // 1. Generate app icon as SVG → PNG data URL (192×192 and 512×512)
+  function makeIconDataUrl(size) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#08070a"/>
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#3d2460" stroke-width="2"/>
+      <!-- Musical note -->
+      <ellipse cx="38" cy="68" rx="10" ry="7" fill="#d4a843" transform="rotate(-15,38,68)"/>
+      <rect x="47" y="28" width="4" height="42" fill="#d4a843"/>
+      <rect x="47" y="28" width="22" height="4" fill="#d4a843"/>
+      <ellipse cx="65" cy="54" rx="10" ry="7" fill="#d4a843" transform="rotate(-15,65,54)"/>
+      <rect x="69" y="14" width="4" height="42" fill="#d4a843"/>
+    </svg>`;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const url = 'data:image/svg+xml;base64,' + btoa(svg);
+    return new Promise(resolve => {
+      img.onload = () => { ctx.drawImage(img, 0, 0); resolve(canvas.toDataURL('image/png')); };
+      img.src = url;
+    });
+  }
+
+  // 2. Build manifest blob and inject
+  async function setupManifest() {
+    const icon192 = await makeIconDataUrl(192);
+    const icon512 = await makeIconDataUrl(512);
+
+    const manifest = {
+      name: 'Tango Musicality Trainer',
+      short_name: 'Tango Trainer',
+      description: 'Train your ear for the tango beat',
+      start_url: './',
+      display: 'standalone',
+      background_color: '#08070a',
+      theme_color: '#08070a',
+      orientation: 'portrait-primary',
+      icons: [
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const url  = URL.createObjectURL(blob);
+    document.getElementById('pwa-manifest').href = url;
+    document.getElementById('pwa-icon-apple').href = icon192;
+  }
+
+  // 3. Service worker (inline blob) — caches app shell for offline use
+  const swSrc = `
+const CACHE = 'tango-trainer-v1';
+const FONTS = [
+  'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&display=swap'
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(FONTS)).catch(() => {})
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys =>
+    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+  ));
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  // Only cache GET requests for external resources (fonts etc.)
+  if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin === location.origin || url.hostname.includes('fonts.g')) {
+    e.respondWith(
+      caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }))
+    );
+  }
+});
+`;
+
+  async function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const blob = new Blob([swSrc], { type: 'application/javascript' });
+      const url  = URL.createObjectURL(blob);
+      await navigator.serviceWorker.register(url, { scope: './' });
+    } catch(e) {
+      // SW registration can fail when served from file:// — that's fine
+      console.log('SW not registered (file:// or unsupported):', e.message);
+    }
+  }
+
+  // 4. "Add to Home Screen" install prompt
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show a subtle install hint in the status bar
+    const hint = document.createElement('div');
+    hint.style.cssText = 'position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:#161320;border:1px solid #3d2460;color:#d4a843;font-family:"Share Tech Mono",monospace;font-size:.65rem;letter-spacing:.12em;padding:.5rem 1.1rem;z-index:900;cursor:pointer;';
+    hint.textContent = '＋ Install as app';
+    hint.addEventListener('click', async () => {
+      hint.remove();
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    });
+    document.body.appendChild(hint);
+  });
+
+  setupManifest();
+  registerSW();
+})();
+
+// ── Beat grid ──
+function renderGrid(){
+  requestAnimationFrame(renderGrid);
+  if(!sessionActive) return;
+  const tl=document.getElementById('timeline');
+  const pos=audioEl.currentTime;
+  const WIN_SEC=4.0;
+  Array.from(tl.querySelectorAll('.dbm,.tap-dot')).forEach(el=>el.remove());
+  beatMapSecs.forEach(b=>{
+    const rel=b-pos;
+    if(Math.abs(rel)>WIN_SEC*0.55) return;
+    const x=50+(rel/WIN_SEC)*100;
+    if(x<0||x>100) return;
+    const m=document.createElement('div');
+    const age=-rel;
+    m.className='dbm '+(age<0?'future':age<0.1?'now':'past');
+    m.style.left=x+'%'; tl.appendChild(m);
+  });
+  taps.forEach(tap=>{
+    const rel=tap.trackPos-pos;
+    if(Math.abs(rel)>WIN_SEC*0.55) return;
+    const x=50+(rel/WIN_SEC)*100;
+    if(x<0||x>100) return;
+    const m=document.createElement('div');
+    m.className='tap-dot '+tap.rating; m.style.left=x+'%'; tl.appendChild(m);
+  });
+}
+</script>
+</body>
+</html>
